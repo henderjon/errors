@@ -2,6 +2,7 @@ package errors
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 )
 
@@ -57,4 +58,10 @@ func (e *Error) Marshal(sep string) []byte {
 		b.Write(e.prev.Marshal(sep))
 	}
 	return b.Bytes()
+}
+
+// Errorf is equivalent to fmt.Errorf, but allows clients to import only this
+// package for all error handling. Pulled from https://godoc.org/upspin.io/errors
+func Errorf(format string, args ...interface{}) error {
+	return New(fmt.Sprintf(format, args...))
 }

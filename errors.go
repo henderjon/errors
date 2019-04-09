@@ -33,6 +33,11 @@ func New(args ...interface{}) *Error {
 	return e
 }
 
+// Prev allows access to an Error's prev
+func (e *Error) Prev() *Error {
+	return e.prev
+}
+
 // Error fulfills the error interface
 func (e *Error) Error() string {
 	return string(e.Marshal(delim))

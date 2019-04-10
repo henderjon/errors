@@ -7,7 +7,7 @@ import (
 
 // Delim and UnitSep are used to separate/delimit fields
 const (
-	Delim   = "\n"
+	Delim   = "\n\t"
 	UnitSep = ";\037" // []byte{31} is the ascii Unit Separator (US) character
 )
 

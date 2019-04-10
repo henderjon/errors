@@ -17,7 +17,9 @@ type Error struct {
 	prev error
 }
 
-// New creates a new Error of our own liking
+// New creates a new Error of our own liking. The args passed should be the
+// the current error string and the previous error as either a standard error or
+// an *Error from this package.
 func New(args ...interface{}) error {
 	if len(args) == 0 {
 		log.Fatal("call to errors.New with no arguments")
@@ -61,14 +63,34 @@ func (e *Error) Serialize(b []byte, sep string) []byte {
 	return b
 }
 
-// Serialize writes the entire stack using sep as a delimeter
-func Serialize(err error, b []byte, sep string) []byte {
+// Serialize writes the entire stack using sep as a delimeter. The args passed
+// should be the latest (topmost) error and either a delim/separator string and
+// a []byte to populate. The []byte arg will see almost no usage as it's
+// primarily used for the recursive stack building. Although it's certainly not
+// out of the realm of possibility that there is a []byte to be filled.
+func Serialize(err error, args ...interface{}) []byte {
 	if err == nil {
 		return nil
 	}
+
+	var (
+		b   []byte
+		sep = Delim
+	)
+
+	for _, arg := range args {
+		switch arg := arg.(type) {
+		case string:
+			sep = arg
+		case []byte:
+			b = arg
+		}
+	}
+
 	if e, ok := err.(*Error); ok {
 		return e.Serialize(b, sep)
 	}
+
 	b = append(b, err.Error()...)
 	return b
 }

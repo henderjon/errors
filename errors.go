@@ -3,6 +3,9 @@ package errors
 import (
 	"fmt"
 	"log"
+	"path/filepath"
+	"runtime"
+	"strconv"
 )
 
 // Delim and UnitSep are used to separate/delimit fields

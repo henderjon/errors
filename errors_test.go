@@ -2,6 +2,8 @@ package errors
 
 import (
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestErrors(t *testing.T) {
@@ -17,15 +19,17 @@ func TestErrors(t *testing.T) {
 		tmpE = New(e, tmpE)
 	}
 
-	if tmpE.Error() != string(Serialize(tmpE, Delim)) {
-		t.Fatal("Error and Marshal should be of same len()")
+	if diff := cmp.Diff(tmpE.Error(), string(Serialize(tmpE, Delim))); diff != "" {
+		t.Error("Error and Marshal should be of same len(); (-got +want)", diff)
 	}
 
-	if "fourth; third; second; first; OH NOES!" != string(Serialize(tmpE, "; ")) {
-		t.Fatal("Error and Marshal should be of same len()")
+	expected := "fourth; third; second; first; OH NOES!"
+	if diff := cmp.Diff(expected, string(Serialize(tmpE, "; "))); diff != "" {
+		t.Error("unexpected Serialize(); (-got +want)", diff)
 	}
 
 	// fmt.Println(tmpE)
+	// fmt.Println(Here())
 
 	// fmt.Println(string(Serialize(tmpE, UnitSep)))
 

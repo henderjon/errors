@@ -95,6 +95,16 @@ func Serialize(err error, args ...interface{}) []byte {
 	return b
 }
 
+// Here return the file:line of calling Here()
+func Here() string {
+	_, file, line, ok := runtime.Caller(1)
+	if ok {
+		path := filepath.Base(file)
+		return path + ":" + strconv.Itoa(line)
+	}
+	return ""
+}
+
 // Pulled from https://godoc.org/upspin.io/errors
 
 // Recreate the errors.New functionality of the standard Go errors package

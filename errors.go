@@ -18,6 +18,7 @@ const (
 type Error struct {
 	err  string
 	prev error
+	loc  Location
 }
 
 // New creates a new Error of our own liking. The args passed should be the
@@ -31,7 +32,9 @@ func New(args ...interface{}) error {
 	for _, arg := range args {
 		switch arg := arg.(type) {
 		case string:
-			e.err = string(arg)
+			e.err = arg
+		case Location:
+			e.loc = arg
 		case *Error:
 			e.prev = arg
 		case error:
@@ -59,6 +62,10 @@ func (e *Error) String() string {
 // Serialize writes the entire stack using sep as a delimeter
 func (e *Error) Serialize(b []byte, sep string) []byte {
 	b = append(b, e.err...)
+	if e.loc != "" {
+		b = append(b, " @ "...)
+		b = append(b, e.loc...)
+	}
 	if e.prev != nil {
 		b = append(b, sep...)
 		b = Serialize(e.prev, b, sep)
@@ -98,14 +105,20 @@ func Serialize(err error, args ...interface{}) []byte {
 	return b
 }
 
+// Location is the name:line of a file. Ideally returned by Here(). In usage
+// it'll give you the file:line of the invocation of Here() to be passed as part
+// of the error.
+type Location string
+
 // Here return the file:line of calling Here()
-func Here() string {
+func Here() Location {
+	var l Location
 	_, file, line, ok := runtime.Caller(1)
 	if ok {
 		path := filepath.Base(file)
-		return path + ":" + strconv.Itoa(line)
+		l = Location(path + ":" + strconv.Itoa(line))
 	}
-	return ""
+	return l
 }
 
 // Pulled from https://godoc.org/upspin.io/errors

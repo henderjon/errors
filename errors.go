@@ -44,9 +44,10 @@ func Here() Location {
 	return l
 }
 
-// New creates a new Error of our own liking. The args passed should be the
-// the current error string and the previous error as either a standard error or
-// an *Error from this package.
+// New creates a new Error of our own liking. The `string` args are assumed 
+// to be the error message. The `error`/`Error` arg is assumed to be a Prev. 
+// The `Location` arg is assumed to be the Location. The `Kind` arg is the 
+// Kind of the error.
 func New(args ...interface{}) error {
 	if len(args) == 0 {
 		log.Fatal("call to errors.New with no arguments")

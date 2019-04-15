@@ -62,3 +62,13 @@ func TestUnserialize(t *testing.T) {
 		t.Error("Unserialize(); (-got +want)", diff)
 	}
 }
+
+func TestIsKind(t *testing.T) {
+	var TestingError Kind = 24
+	e := getErrorForSerialization()
+
+	expected := true
+	if diff := cmp.Diff(IsKind(e, TestingError), expected); diff != "" {
+		t.Error("IsKind(); (-got +want)", diff)
+	}
+}

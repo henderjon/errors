@@ -1,3 +1,10 @@
+[![GoDoc](https://godoc.org/github.com/henderjon/errors?status.svg)](https://godoc.org/github.com/henderjon/errors)
+[![License: BSD-3](https://img.shields.io/badge/license-BSD--3-blue.svg)](https://img.shields.io/badge/license-BSD--3-blue.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/henderjon/errors)](https://goreportcard.com/report/github.com/henderjon/errors)
+[![Build Status](https://travis-ci.org/henderjon/errors.svg?branch=dev)](https://travis-ci.org/henderjon/errors)
+![tag](https://img.shields.io/github/tag/henderjon/errors.svg)
+![release](https://img.shields.io/github/release/henderjon/errors.svg)
+
 # errors
 
 A drop in replacement for Go's stdlib errors package with support for previous errors.

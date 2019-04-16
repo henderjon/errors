@@ -13,8 +13,8 @@ import (
 // Sep and UnitSep are used to separate/delim fields
 const (
 	Sep       = "\n\t"
-	RecordSep = "\036" // byte(30) is the ascii Record Separator (RS) character
-	UnitSep   = "\037" // byte(31) is the ascii Unit Separator (US) character
+	RecordSep = "\036" // byte(30) || "\x1e" ... is the ascii Record Separator (RS) character
+	UnitSep   = "\037" // byte(31) || "\x1e" ... is the ascii Unit Separator (US) character
 )
 
 // Error is an error with an embedded "previous" error and a kind
@@ -241,15 +241,12 @@ func Encode(e error) string {
 		// if e.Kind != 0 {
 		b.WriteString(UnitSep)
 		b.WriteString(strconv.Itoa(int(e.Kind)))
-		// }
 		// if e.Location != "" {
 		b.WriteString(UnitSep)
 		b.WriteString(string(e.Location))
-		// }
 		// if e.Prev != nil {
 		b.WriteString(RecordSep)
 		b.WriteString(Encode(e.Prev))
-		// }
 	} else {
 		b.WriteString(e.Error())
 	}

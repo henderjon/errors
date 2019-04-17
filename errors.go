@@ -64,7 +64,7 @@ func New(args ...interface{}) error {
 		case *Error:
 			e.Prev = arg
 		case error:
-			e.Prev = New(arg.Error)
+			e.Prev = New(arg.Error())
 		}
 	}
 	return e

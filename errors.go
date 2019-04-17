@@ -81,11 +81,6 @@ func IsKind(err error, k Kind) bool {
 // Error fulfills the error interface. The error stack will be of the format:
 // `message[[[ = kind] @ location]\n\t]`
 func (e *Error) Error() string {
-	return e.String()
-}
-
-// String fulfills the Stringer interface & returns the string representation of the Error
-func (e *Error) String() string {
 	var b strings.Builder
 	b.WriteString(e.Err)
 	if e.Kind != 0 {
@@ -98,13 +93,8 @@ func (e *Error) String() string {
 	}
 	if e.Prev != nil {
 		b.WriteString(Sep)
-		if err, ok := e.Prev.(*Error); ok {
-			b.WriteString(err.String())
-		} else {
-			b.WriteString(e.Error())
-		}
+		b.WriteString(e.Prev.Error())
 	}
-
 	return b.String()
 }
 

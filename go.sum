@@ -1,4 +1,2 @@
 github.com/google/go-cmp v0.2.0 h1:+dTQ8DZQJz0Mb/HjFlkptS1FeQ4cWSnN941F8aEG4SQ=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
-upspin.io v0.0.0-20190403071319-e10ca8ff5f80 h1:PHeVcnt+TWq6YV/erajqi+K1Wyny/0sg4VgKwThmvdY=
-upspin.io v0.0.0-20190403071319-e10ca8ff5f80/go.mod h1:4hdXTXkMPXxzbiw/sultoifpccn98hChAFvrU19V2ug=

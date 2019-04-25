@@ -15,7 +15,7 @@ func getErrorForSerialization() error {
 func TestEncode(t *testing.T) {
 	e := getErrorForSerialization()
 
-	expected := "third error\03724\037errors_test.go:12\036second error\0370\037errors_test.go:12\036first error\0370\037\036"
+	expected := "024\037third error\037errors_test.go:12\036000\037second error\037errors_test.go:12\036000\037first error\037\036"
 	if diff := cmp.Diff(Encode(e), expected); diff != "" {
 		t.Error("Encode(e); (-got +want)", diff)
 	}
@@ -24,11 +24,11 @@ func TestEncode(t *testing.T) {
 func TestString(t *testing.T) {
 	e := getErrorForSerialization()
 
-	expected := `third error = 24 @ errors_test.go:12
+	expected := `[024] third error @ errors_test.go:12
 	second error @ errors_test.go:12
 	first error`
 	if diff := cmp.Diff(e.Error(), expected); diff != "" {
-		t.Fatal(e.Error())
+		// t.Fatal(e.Error())
 		t.Error("Error.Error(); (-got +want)", diff)
 	}
 }
@@ -48,7 +48,7 @@ func TestSerialize(t *testing.T) {
 
 	expected := []byte{11, 116, 104, 105, 114, 100, 32, 101, 114, 114, 111, 114, 1, 24, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 50, 12, 115, 101, 99, 111, 110, 100, 32, 101, 114, 114, 111, 114, 1, 0, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 50, 11, 102, 105, 114, 115, 116, 32, 101, 114, 114, 111, 114, 1, 0, 0}
 	if diff := cmp.Diff(Serialize(e), expected); diff != "" {
-		t.Fatal(Serialize(e))
+		t.Fatal(string(Serialize(e)))
 		t.Error("Serialize(e); (-got +want)", diff)
 	}
 }
@@ -71,4 +71,14 @@ func TestIsKind(t *testing.T) {
 	if diff := cmp.Diff(IsKind(e, TestingError), expected); diff != "" {
 		t.Error("IsKind(); (-got +want)", diff)
 	}
+}
+
+func TestError(t *testing.T) {
+	// e := New("this is an error", New("this is also an error"), Here())
+	// t.Fatal(e)
+}
+
+func TestWhen(t *testing.T) {
+	// T := time.Now().UTC()
+	// t.Fatal("\n", T.Format(time.RFC3339), "\n", T.Format("2006-01-01 15:04:05"))
 }

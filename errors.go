@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Sep and UnitSep are used to separate/delim fields
@@ -22,7 +23,8 @@ type Error struct {
 	Err      string   `json:"error"`    // this error
 	Kind     Kind     `json:"kind"`     // the Kind of this error
 	Location Location `json:"location"` // the location of this error
-	Prev     error    `json:"previous"` // the previous error
+	// When     When     `json:"when"`     // the timestamp of the error
+	Prev error `json:"previous"` // the previous error
 }
 
 // Kind is a custom int type to communicate the error's Kind.
@@ -44,9 +46,17 @@ func Here() Location {
 	return l
 }
 
-// New creates a new Error of our own liking. The `string` args are assumed 
-// to be the error message. The `error`/`Error` arg is assumed to be a Prev. 
-// The `Location` arg is assumed to be the Location. The `Kind` arg is the 
+// When is a typed string that communicate the date/time of an error
+type When string
+
+// Now returns a simple UTC timestamp, formatted in time.RFC3339 (2006-01-02T15:04:05Z)
+func Now() string {
+	return time.Now().UTC().Format(time.RFC3339)
+}
+
+// New creates a new Error of our own liking. The `string` args are assumed
+// to be the error message. The `error`/`Error` arg is assumed to be a Prev.
+// The `Location` arg is assumed to be the Location. The `Kind` arg is the
 // Kind of the error.
 func New(args ...interface{}) error {
 	if len(args) == 0 {
@@ -61,6 +71,8 @@ func New(args ...interface{}) error {
 			e.Kind = arg
 		case Location:
 			e.Location = arg
+		// case When:
+		// 	e.When = arg
 		case *Error:
 			e.Prev = arg
 		case error:
@@ -82,11 +94,12 @@ func IsKind(err error, k Kind) bool {
 // `message[[[ = kind] @ location]\n\t]`
 func (e *Error) Error() string {
 	var b strings.Builder
-	b.WriteString(e.Err)
 	if e.Kind != 0 {
-		b.WriteString(" = ")
-		b.WriteString(strconv.Itoa(int(e.Kind)))
+		b.WriteString("[")
+		b.WriteString(fmt.Sprintf("%03d", e.Kind))
+		b.WriteString("] ")
 	}
+	b.WriteString(e.Err)
 	if e.Location != "" {
 		b.WriteString(" @ ")
 		b.WriteString(string(e.Location))
@@ -227,14 +240,11 @@ func Encode(e error) string {
 	}
 	var b strings.Builder
 	if e, ok := e.(*Error); ok {
-		b.WriteString(e.Err)
-		// if e.Kind != 0 {
+		b.WriteString(fmt.Sprintf("%03d", e.Kind))
 		b.WriteString(UnitSep)
-		b.WriteString(strconv.Itoa(int(e.Kind)))
-		// if e.Location != "" {
+		b.WriteString(e.Err)
 		b.WriteString(UnitSep)
 		b.WriteString(string(e.Location))
-		// if e.Prev != nil {
 		b.WriteString(RecordSep)
 		b.WriteString(Encode(e.Prev))
 	} else {

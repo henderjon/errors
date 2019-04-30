@@ -7,15 +7,23 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+const (
+	bad Kind = iota + 1
+	worse
+	worst
+)
+
 func getErrorForSerialization() error {
-	var TestingError Kind = 24
-	return New("third error", Kind(TestingError), Here(), New("second error", New("first error"), Here()))
+	a := New(bad, Here(), "things are gonna be bad")
+	b := New(worse, "getErrorForSerialization", Here(), a)
+	c := New(worst, Here(), b)
+	return c
 }
 
 func TestEncode(t *testing.T) {
 	e := getErrorForSerialization()
 
-	expected := "024\037third error\037errors_test.go:12\036000\037second error\037errors_test.go:12\036000\037first error\037\036"
+	expected := "003\x1ferrors_test.go:19\x1f\x1e002\x1ferrors_test.go:18\x1fgetErrorForSerialization\x1e001\x1ferrors_test.go:17\x1fthings are gonna be bad\x1e"
 	if diff := cmp.Diff(Encode(e), expected); diff != "" {
 		t.Error("Encode(e); (-got +want)", diff)
 	}
@@ -24,9 +32,9 @@ func TestEncode(t *testing.T) {
 func TestString(t *testing.T) {
 	e := getErrorForSerialization()
 
-	expected := `[024] third error @ errors_test.go:12
-	second error @ errors_test.go:12
-	first error`
+	expected := `@ errors_test.go:19; ` + `
+	@ errors_test.go:18; getErrorForSerialization
+	@ errors_test.go:17; things are gonna be bad`
 	if diff := cmp.Diff(e.Error(), expected); diff != "" {
 		// t.Fatal(e.Error())
 		t.Error("Error.Error(); (-got +want)", diff)
@@ -37,7 +45,8 @@ func TestJSONEncode(t *testing.T) {
 	e := getErrorForSerialization()
 
 	real, _ := json.Marshal(e)
-	expected := []byte(`{"error":"third error","kind":24,"location":"errors_test.go:12","previous":{"error":"second error","kind":0,"location":"errors_test.go:12","previous":{"error":"first error","kind":0,"location":"","previous":null}}}`)
+	// t.Fatal(string(real))
+	expected := []byte(`{"kind":3,"location":"errors_test.go:19","previous":{"error":"getErrorForSerialization","kind":2,"location":"errors_test.go:18","previous":{"error":"things are gonna be bad","kind":1,"location":"errors_test.go:17"}}}`)
 	if diff := cmp.Diff(real, expected); diff != "" {
 		t.Error("json.Marshal(); (-got +want)", diff)
 	}
@@ -46,16 +55,16 @@ func TestJSONEncode(t *testing.T) {
 func TestSerialize(t *testing.T) {
 	e := getErrorForSerialization()
 
-	expected := []byte{11, 116, 104, 105, 114, 100, 32, 101, 114, 114, 111, 114, 1, 24, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 50, 12, 115, 101, 99, 111, 110, 100, 32, 101, 114, 114, 111, 114, 1, 0, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 50, 11, 102, 105, 114, 115, 116, 32, 101, 114, 114, 111, 114, 1, 0, 0}
+	expected := []byte{6, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 57, 0, 4, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 56, 24, 103, 101, 116, 69, 114, 114, 111, 114, 70, 111, 114, 83, 101, 114, 105, 97, 108, 105, 122, 97, 116, 105, 111, 110, 2, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 55, 23, 116, 104, 105, 110, 103, 115, 32, 97, 114, 101, 32, 103, 111, 110, 110, 97, 32, 98, 101, 32, 98, 97, 100}
 	if diff := cmp.Diff(Serialize(e), expected); diff != "" {
-		t.Fatal(string(Serialize(e)))
+		t.Fatal(Serialize(e))
 		t.Error("Serialize(e); (-got +want)", diff)
 	}
 }
 
 func TestUnserialize(t *testing.T) {
 	e := new(Error)
-	e.Unserialize([]byte{11, 116, 104, 105, 114, 100, 32, 101, 114, 114, 111, 114, 1, 24, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 50, 12, 115, 101, 99, 111, 110, 100, 32, 101, 114, 114, 111, 114, 1, 0, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 50, 11, 102, 105, 114, 115, 116, 32, 101, 114, 114, 111, 114, 1, 0, 0})
+	e.Unserialize([]byte{6, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 57, 0, 4, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 56, 24, 103, 101, 116, 69, 114, 114, 111, 114, 70, 111, 114, 83, 101, 114, 105, 97, 108, 105, 122, 97, 116, 105, 111, 110, 2, 17, 101, 114, 114, 111, 114, 115, 95, 116, 101, 115, 116, 46, 103, 111, 58, 49, 55, 23, 116, 104, 105, 110, 103, 115, 32, 97, 114, 101, 32, 103, 111, 110, 110, 97, 32, 98, 101, 32, 98, 97, 100})
 
 	expected := getErrorForSerialization()
 	if diff := cmp.Diff(e, expected); diff != "" {
@@ -64,21 +73,38 @@ func TestUnserialize(t *testing.T) {
 }
 
 func TestIsKind(t *testing.T) {
-	var TestingError Kind = 24
 	e := getErrorForSerialization()
 
-	expected := true
-	if diff := cmp.Diff(IsKind(e, TestingError), expected); diff != "" {
-		t.Error("IsKind(); (-got +want)", diff)
+	if diff := cmp.Diff(Is(e, bad), false); diff != "" {
+		t.Error("Is(); (-got +want)", diff)
+	}
+	if diff := cmp.Diff(Is(e, worst), true); diff != "" {
+		t.Error("Is(); (-got +want)", diff)
 	}
 }
 
-func TestError(t *testing.T) {
-	// e := New("this is an error", New("this is also an error"), Here())
-	// t.Fatal(e)
-}
-
-func TestWhen(t *testing.T) {
-	// T := time.Now().UTC()
-	// t.Fatal("\n", T.Format(time.RFC3339), "\n", T.Format("2006-01-01 15:04:05"))
+func TestHas(t *testing.T) {
+	var (
+		Fine  = Kind(2)
+		Worst = New(Kind(5))
+		Worse = New(Kind(4), Worst)
+		Bad   = New(Kind(3), Worse)
+		x     = Bad
+	)
+	// yes
+	e, b := Has(x, Kind(5))
+	if diff := cmp.Diff(e, Worst); diff != "" {
+		t.Error("Has(); (-got +want)", diff)
+	}
+	if diff := cmp.Diff(b, true); diff != "" {
+		t.Error("Has(); (-got +want)", diff)
+	}
+	// no
+	e, b = Has(x, Fine)
+	if diff := cmp.Diff(e, nil); diff != "" {
+		t.Error("Has(); (-got +want)", diff)
+	}
+	if diff := cmp.Diff(b, false); diff != "" {
+		t.Error("Has(); (-got +want)", diff)
+	}
 }

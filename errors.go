@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // Sep and UnitSep are used to separate/delim fields
@@ -20,11 +19,10 @@ const (
 
 // Error is an error with an embedded "previous" error and a kind
 type Error struct {
-	Err      string   `json:"error"`    // this error
-	Kind     Kind     `json:"kind"`     // the Kind of this error
-	Location Location `json:"location"` // the location of this error
-	// When     When     `json:"when"`     // the timestamp of the error
-	Prev error `json:"previous"` // the previous error
+	Err      string   `json:"error,omitempty"`    // this error
+	Kind     Kind     `json:"kind,omitempty"`     // the Kind of this error
+	Location Location `json:"location,omitempty"` // the location of this error
+	Prev     error    `json:"previous,omitempty"` // the previous error
 }
 
 // Kind is a custom int type to communicate the error's Kind.
@@ -46,14 +44,6 @@ func Here() Location {
 	return l
 }
 
-// When is a typed string that communicate the date/time of an error
-type When string
-
-// Now returns a simple UTC timestamp, formatted in time.RFC3339 (2006-01-02T15:04:05Z)
-func Now() string {
-	return time.Now().UTC().Format(time.RFC3339)
-}
-
 // New creates a new Error of our own liking. The `string` args are assumed
 // to be the error message. The `error`/`Error` arg is assumed to be a Prev.
 // The `Location` arg is assumed to be the Location. The `Kind` arg is the
@@ -71,8 +61,6 @@ func New(args ...interface{}) error {
 			e.Kind = arg
 		case Location:
 			e.Location = arg
-		// case When:
-		// 	e.When = arg
 		case *Error:
 			e.Prev = arg
 		case error:
@@ -82,27 +70,38 @@ func New(args ...interface{}) error {
 	return e
 }
 
-// IsKind checks to see if the error is of a certain kind
-func IsKind(err error, k Kind) bool {
+// Is checks to see if the error is of a certain kind
+func Is(err error, k Kind) bool {
 	if e, ok := err.(*Error); ok {
 		return e.Kind == k
 	}
 	return false
 }
 
+// Has checks to see if the error is of a certain kind. It returns the (matching error, true) or the (nil, false)
+func Has(err error, k Kind) (error, bool) {
+	if e, ok := err.(*Error); ok {
+		if e.Kind == k {
+			return e, true
+		}
+		if e.Prev != nil {
+			return Has(e.Prev, k)
+		}
+	}
+	return nil, false
+}
+
 // Error fulfills the error interface. The error stack will be of the format:
 // `message[[[ = kind] @ location]\n\t]`
 func (e *Error) Error() string {
 	var b strings.Builder
-	if e.Kind != 0 {
-		b.WriteString("[")
-		b.WriteString(fmt.Sprintf("%03d", e.Kind))
-		b.WriteString("] ")
-	}
-	b.WriteString(e.Err)
 	if e.Location != "" {
-		b.WriteString(" @ ")
+		b.WriteString("@ ")
 		b.WriteString(string(e.Location))
+		b.WriteString("; ")
+	}
+	if e.Err != "" {
+		b.WriteString(e.Err)
 	}
 	if e.Prev != nil {
 		b.WriteString(Sep)
@@ -113,9 +112,9 @@ func (e *Error) Error() string {
 
 // Serialize writes the entire stack using the format 'int64(len)[]bytes(value)'
 func (e *Error) Serialize(b []byte) []byte {
-	b = appendString(b, e.Err)
 	b = appendKind(b, e.Kind)
 	b = appendString(b, string(e.Location))
+	b = appendString(b, e.Err)
 	b = appendError(b, e.Prev)
 	return b
 }
@@ -131,12 +130,9 @@ func appendString(b []byte, str string) []byte {
 
 // appendString writes a Kind's length and value to b
 func appendKind(b []byte, k Kind) []byte {
-	var tmp1 [16]byte // For use by PutVarint.
-	var tmp2 [16]byte
-	N := binary.PutUvarint(tmp1[:], uint64(k)) // value
-	L := binary.PutUvarint(tmp2[:], uint64(N)) // len
-	b = append(b, tmp2[:L]...)                 // len
-	b = append(b, tmp1[:N]...)                 // value
+	var tmp [16]byte                        // For use by PutVarint.
+	N := binary.PutVarint(tmp[:], int64(k)) // value
+	b = append(b, tmp[:N]...)               // value
 	return b
 }
 
@@ -181,23 +177,24 @@ func Serialize(err error, args ...interface{}) []byte {
 // Unserialize reads the byte slice into the receiver, which must be non-nil.
 // The returned error is always nil.
 func (e *Error) Unserialize(b []byte) error {
+	var data []byte
 	if len(b) == 0 {
 		return nil
 	}
 
-	data, b := getBytes(b)
-	if data != nil {
-		e.Err = string(data)
-	}
-
-	data, b = getBytes(b)
-	if data != nil {
-		e.Kind = Kind(data[0]) // Kind is always scalar
-	}
+	// the first value is a scalar int64 `kind`
+	k, N := binary.Varint(b)
+	e.Kind = Kind(k)
+	b = b[N:]
 
 	data, b = getBytes(b)
 	if data != nil {
 		e.Location = Location(data)
+	}
+
+	data, b = getBytes(b)
+	if data != nil {
+		e.Err = string(data)
 	}
 
 	e.Prev = parseError(b)
@@ -242,9 +239,9 @@ func Encode(e error) string {
 	if e, ok := e.(*Error); ok {
 		b.WriteString(fmt.Sprintf("%03d", e.Kind))
 		b.WriteString(UnitSep)
-		b.WriteString(e.Err)
-		b.WriteString(UnitSep)
 		b.WriteString(string(e.Location))
+		b.WriteString(UnitSep)
+		b.WriteString(e.Err)
 		b.WriteString(RecordSep)
 		b.WriteString(Encode(e.Prev))
 	} else {

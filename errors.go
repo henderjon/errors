@@ -62,8 +62,14 @@ func New(args ...interface{}) error {
 		case Location:
 			e.Location = arg
 		case *Error:
+			if len(args) == 1 {
+				return arg // don't just wrap errors in errors for funsies
+			}
 			e.Prev = arg
 		case error:
+			if len(args) == 1 {
+				return arg // don't just wrap errors in errors for funsies
+			}
 			e.Prev = New(arg.Error())
 		}
 	}

@@ -70,7 +70,7 @@ func New(args ...interface{}) error {
 			if len(args) == 1 {
 				return arg // don't just wrap errors in errors for funsies
 			}
-			e.Prev = New(arg.Error())
+			e.Prev = New(arg.Error()) // I don't see any good reason to preserve the simplicity of the Stdlib's errors.
 		}
 	}
 	return e

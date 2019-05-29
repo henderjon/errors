@@ -70,7 +70,7 @@ func New(args ...interface{}) error {
 			if len(args) == 1 {
 				return arg // don't just wrap errors in errors for funsies
 			}
-			e.Prev = New(arg.Error()) // I don't see any good reason to preserve the simplicity of the Stdlib's errors.
+			e.Prev = New(arg.Error()) // I don't see any good reason to preserve the Stdlib's errors.
 		}
 	}
 	return e
@@ -98,7 +98,7 @@ func Has(err error, k Kind) (error, bool) {
 }
 
 // Error fulfills the error interface. The error stack will be of the format:
-// `message[[[ = kind] @ location]\n\t]`
+// `@ location; message\n\t`
 func (e *Error) Error() string {
 	var b strings.Builder
 	if e.Location != "" {
